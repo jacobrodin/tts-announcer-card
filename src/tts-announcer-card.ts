@@ -1,79 +1,90 @@
-import {
-          entity_id: this.config.tts_entity,
-          media_player_entity_id: player,
-          message: this.message,
-          cache: false
-        });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  }
+import { LitElement, html, css } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
 
-  private clearMessage() {
+@customElement('tts-announcer-card')
+export class TTSAnnouncerCard extends LitElement {
+  @property({ attribute: false }) hass!: any;
+
+  @state() message = '';
+  @state() selectedSpeaker = 'media_player.bedroom_speaker';
+
+  static styles = css`
+    ha-card {
+      padding: 16px;
+      border-radius: 20px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    select, input {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--divider-color);
+      background: var(--card-background-color);
+      color: var(--primary-text-color);
+    }
+
+    button {
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: var(--primary-color);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+  `;
+
+  private async speak() {
+    if (!this.message.trim()) return;
+
+    await this.hass.callService('tts', 'speak', {
+      entity_id: 'tts.home_assistant_cloud',
+      media_player_entity_id: this.selectedSpeaker,
+      message: this.message,
+      cache: false
+    });
+
     this.message = '';
   }
 
-  protected render(): TemplateResult {
-    const players = this.getMediaPlayers();
-
+  render() {
     return html`
-      <ha-card .header=${this.config.title}>
+      <ha-card header="TTS Announcer">
         <div class="container">
 
-          <div class="speaker-list">
-            ${players.map(
-              (player: any) => html`
-                <div class="speaker-item">
-                  <ha-checkbox
-                    .checked=${this.selectedPlayers.includes(player.entity_id)}
-                    @change=${() =>
-                      this.togglePlayer(player.entity_id)}
-                  ></ha-checkbox>
+          <select
+            .value=${this.selectedSpeaker}
+            @change=${(e: any) =>
+              (this.selectedSpeaker = e.target.value)}
+          >
+            <option value="media_player.bedroom_speaker">
+              Bedroom Speaker
+            </option>
+            <option value="media_player.living_room_speaker">
+              Living Room Speaker
+            </option>
+          </select>
 
-                  <span>
-                    ${player.attributes.friendly_name || player.entity_id}
-                  </span>
-                </div>
-              `
-            )}
-          </div>
-
-          <ha-textfield
-            class="message-box"
-            label="Announcement"
+          <input
+            type="text"
+            placeholder="Message..."
             .value=${this.message}
-            @input=${(e: any) => {
-              this.message = e.target.value;
-            }}
-          ></ha-textfield>
+            @input=${(e: any) =>
+              (this.message = e.target.value)}
+          />
 
-          <div class="volume">
-            <span>Volume</span>
-
-            <ha-slider
-              min="0"
-              max="1"
-              step="0.01"
-              .value=${String(this.volume)}
-              @change=${(e: any) => {
-                this.volume = Number(e.target.value);
-              }}
-            ></ha-slider>
-          </div>
-
-          <div class="controls">
-            <button @click=${this.speak}>
-              Speak
-            </button>
-
-            <button
-              class="secondary"
-              @click=${this.clearMessage}
-            >
-              Clear
-            </button>
-          </div>
+          <button @click=${this.speak}>
+            Speak
+          </button>
 
         </div>
       </ha-card>
@@ -81,6 +92,6 @@ import {
   }
 
   getCardSize() {
-    return 4;
+    return 3;
   }
 }
