@@ -2,5 +2,5 @@
   "name": "TTS Announcer Card",
   "render_readme": true,
   "filename": "tts-announcer-card.js",
-  "content_in_root": false
+  "content_in_root": true
 }
